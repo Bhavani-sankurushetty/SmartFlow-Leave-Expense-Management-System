@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Server Error{% endblock %}
+{% block content %}
+<div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+    <h1 style="font-size: 3rem; margin: 0; color: var(--danger);">500</h1>
+    <h2 style="margin: 0.5rem 0 1rem 0;">Internal Server Error</h2>
+    <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem auto;">
+        An unexpected error occurred while processing the workflow request. The database transaction has been safely rolled back.
+    </p>
+    <div>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

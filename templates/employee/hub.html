@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Employee Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Employee Self-Service Portal</h1>
+        <p class="page-subtitle">Submit, track, and review leave requests and expense claims for <strong>{{ user.first_name }} {{ user.last_name }}</strong>.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('employee.leave_new') }}" class="btn btn-primary">+ New Leave Request</a>
+        <a href="{{ url_for('employee.expense_new') }}" class="btn btn-secondary">+ New Expense Claim</a>
+    </div>
+</div>
+
+<!-- Employee Context Summary -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                {{ user.first_name[0] }}{{ user.last_name[0] }}
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 1.15rem;">{{ user.first_name }} {{ user.last_name }}</h3>
+                <div style="color: var(--text-muted); font-size: 0.85rem;">
+                    {{ user.job_title }} &bull; {{ user.department }} &bull; <code>{{ user.employee_id }}</code>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 1.5rem; font-size: 0.85rem;">
+            <div>
+                <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Country & Currency</span>
+                <strong>{{ user.country }} ({{ country_currencies.get(user.country, 'USD') }})</strong>
+            </div>
+            <div>
+                <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Cost Center</span>
+                <strong>{{ user.cost_center.code if user.cost_center else user.cost_center_id }}</strong>
+            </div>
+            <div>
+                <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Direct Manager</span>
+                <strong>{{ user.manager.first_name ~ ' ' ~ user.manager.last_name if user.manager else 'None (CEO)' }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Wrapper -->
+<div class="tabs-wrapper">
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-leaves">My Leave Requests ({{ leaves|length }})</button>
+        <button class="tab-btn" data-tab="tab-expenses">My Expense Claims ({{ claims|length }})</button>
+        <button class="tab-btn" data-tab="tab-balances">Available Balances ({{ balances|length }})</button>
+    </div>
+
+    <!-- Tab 1: Leave Requests -->
+    <div id="tab-leaves" class="tab-content active">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Leave Request History</h2>
+                <a href="{{ url_for('employee.leave_new') }}" class="btn btn-primary btn-sm">+ Request Leave</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Policy</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Business Days</th>
+                            <th>Status</th>
+                            <th>Submitted At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if leaves %}
+                            {% for l in leaves %}
+                                <tr>
+                                    <td><strong>{{ l.leave_request_id }}</strong></td>
+                                    <td>{{ l.leave_policy.name }}</td>
+                                    <td>{{ l.start_date }}</td>
+                                    <td>{{ l.end_date }}</td>
+                                    <td>{{ l.business_days }} days</td>
+                                    <td>
+                                        <span class="badge badge-{{ l.status }}">{{ l.status }}</span>
+                                    </td>
+                                    <td>{{ l.submitted_at.strftime('%Y-%m-%d') if l.submitted_at else '--' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('employee.leave_detail', leave_id=l.leave_request_id) }}" class="btn btn-secondary btn-sm">View Details</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No leave requests submitted yet.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Expense Claims -->
+    <div id="tab-expenses" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Expense Claim History</h2>
+                <a href="{{ url_for('employee.expense_new') }}" class="btn btn-primary btn-sm">+ Submit Expense</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Lines</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Reimbursement</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if claims %}
+                            {% for c in claims %}
+                                <tr>
+                                    <td><strong>{{ c.expense_claim_id }}</strong></td>
+                                    <td>{{ c.expense_policy.category }}</td>
+                                    <td>{{ c.claim_date }}</td>
+                                    <td>{{ c.expense_lines|length }}</td>
+                                    <td><strong>{{ c.currency }} {{ "{:,.2f}".format(c.total_amount) }}</strong></td>
+                                    <td>
+                                        <span class="badge badge-{{ c.status }}">{{ c.status }}</span>
+                                    </td>
+                                    <td>
+                                        {% if c.reimbursements %}
+                                            {% set r = c.reimbursements[0] %}
+                                            <span class="badge badge-{{ r.status }}">{{ r.status }} ({{ r.reimbursement_id }})</span>
+                                        {% else %}
+                                            <span style="color: var(--text-muted); font-size: 0.775rem;">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('employee.expense_detail', claim_id=c.expense_claim_id) }}" class="btn btn-secondary btn-sm">View Details</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No expense claims submitted yet.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Leave Balances -->
+    <div id="tab-balances" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Statutory Leave Balances (Reference Year 2026)</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Policy</th>
+                            <th>Leave Type</th>
+                            <th>Annual Allowance</th>
+                            <th>Accrued Days</th>
+                            <th>Used Days</th>
+                            <th>Remaining Baseline</th>
+                            <th>Real-Time Available</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if balances %}
+                            {% for b in balances %}
+                                <tr>
+                                    <td><strong>{{ b.policy_name }}</strong></td>
+                                    <td><span class="badge badge-neutral">{{ b.leave_type }}</span></td>
+                                    <td>{{ b.allowance }} days</td>
+                                    <td>{{ b.accrued }} days</td>
+                                    <td>{{ b.used }} days</td>
+                                    <td>{{ b.remaining }} days</td>
+                                    <td>
+                                        <strong style="color: var(--primary); font-size: 1rem;">{{ b.available }} days</strong>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No leave balance records available for this country.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

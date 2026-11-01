@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Rules Matrix - SmartFlow Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('admin.portal') }}" class="btn btn-secondary btn-sm">&larr; Back to Admin Portal</a>
+        </div>
+        <h1 class="page-title">Approval Routing Matrix</h1>
+        <p class="page-subtitle">Multi-tier threshold rules, authority tiers, and sequential escalation criteria across all jurisdictions ({{ rules|length }} rules).</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div style="padding: 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.rules') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 150px;">
+                <label class="form-label" style="margin-bottom: 0.25rem;">Request Type:</label>
+                <select name="request_type" class="form-select">
+                    <option value="all" {% if req_type == 'all' %}selected{% endif %}>All Types</option>
+                    <option value="leave" {% if req_type == 'leave' %}selected{% endif %}>Leave</option>
+                    <option value="expense" {% if req_type == 'expense' %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <label class="form-label" style="margin-bottom: 0.25rem;">Country:</label>
+                <select name="country" class="form-select">
+                    <option value="all" {% if country == 'all' %}selected{% endif %}>All Countries</option>
+                    {% for c in ['USA', 'GBR', 'CAN', 'AUS', 'DEU', 'IND'] %}
+                    <option value="{{ c }}" {% if country == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="align-self: flex-end;">
+                <button type="submit" class="btn btn-primary">Filter Matrix</button>
+                {% if req_type != 'all' or country != 'all' %}
+                <a href="{{ url_for('admin.rules') }}" class="btn btn-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Rule ID</th>
+                    <th>Type</th>
+                    <th>Country</th>
+                    <th>Category</th>
+                    <th>Threshold Min</th>
+                    <th>Threshold Max</th>
+                    <th>Authority Level</th>
+                    <th>Sequence Order</th>
+                    <th>Auto-Approve</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rules %}
+                <tr>
+                    <td class="font-mono">{{ r.approval_rule_id }}</td>
+                    <td>
+                        {% if r.request_type == 'leave' %}
+                        <span class="badge badge-info">Leave</span>
+                        {% else %}
+                        <span class="badge badge-primary">Expense</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge badge-secondary">{{ r.country or 'GLOBAL' }}</span></td>
+                    <td>{{ r.category or 'All' }}</td>
+                    <td>{{ r.threshold_min or '0.00' }}</td>
+                    <td>{{ r.threshold_max or '&infin;' }}</td>
+                    <td><span class="badge badge-primary">{{ r.authority_level }}</span></td>
+                    <td style="text-align: center;"><strong>{{ r.step_order or 1 }}</strong></td>
+                    <td>
+                        {% if r.is_auto_approved %}
+                        <span class="badge badge-success">Yes</span>
+                        {% else %}
+                        <span class="badge badge-secondary">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

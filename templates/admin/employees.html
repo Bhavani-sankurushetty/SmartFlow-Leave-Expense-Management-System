@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Directory - SmartFlow Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('admin.portal') }}" class="btn btn-secondary btn-sm">&larr; Back to Admin Portal</a>
+        </div>
+        <h1 class="page-title">Employee Directory</h1>
+        <p class="page-subtitle">Organizational hierarchy, roles, statutory jurisdictions and cost centers ({{ total_count }} total).</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div style="padding: 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.employees') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 250px;">
+                <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Search by name, ID, title, or email...">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <select name="country" class="form-select">
+                    <option value="">All Countries</option>
+                    {% for c in ['USA', 'GBR', 'CAN', 'AUS', 'DEU', 'IND'] %}
+                    <option value="{{ c }}" {% if country_filter == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                {% if search or country_filter %}
+                <a href="{{ url_for('admin.employees') }}" class="btn btn-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Job Title</th>
+                    <th>Role</th>
+                    <th>Country</th>
+                    <th>Cost Center</th>
+                    <th>Manager</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td class="font-mono">{{ emp.employee_id }}</td>
+                    <td><strong>{{ emp.first_name }} {{ emp.last_name }}</strong></td>
+                    <td class="text-muted"><small>{{ emp.email }}</small></td>
+                    <td>{{ emp.department }}</td>
+                    <td>{{ emp.job_title }}</td>
+                    <td><span class="badge badge-secondary">{{ emp.role }}</span></td>
+                    <td><span class="badge badge-info">{{ emp.country }}</span></td>
+                    <td>{{ emp.cost_center.code if emp.cost_center else '—' }}</td>
+                    <td>
+                        {% if emp.manager %}
+                        <small>{{ emp.manager.first_name }} {{ emp.manager.last_name }}</small>
+                        {% else %}
+                        <span class="text-muted"><small>None (CEO)</small></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if emp.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

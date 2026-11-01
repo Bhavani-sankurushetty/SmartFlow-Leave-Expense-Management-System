@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Portal - SmartFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Admin & System Operations</h1>
+        <p class="page-subtitle">Master entity configuration, approval matrix administration, audit log inspection, and database integrity telemetry.</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ url_for('admin.employees') }}" class="btn btn-secondary btn-sm">Employees</a>
+        <a href="{{ url_for('admin.policies') }}" class="btn btn-secondary btn-sm">Policies</a>
+        <a href="{{ url_for('admin.rules') }}" class="btn btn-secondary btn-sm">Approval Rules</a>
+        <a href="{{ url_for('admin.cost_centers') }}" class="btn btn-secondary btn-sm">Cost Centers</a>
+        <a href="{{ url_for('admin.audit_log') }}" class="btn btn-primary btn-sm">Audit Log</a>
+    </div>
+</div>
+
+<!-- Database Telemetry Card -->
+<div class="card mb-4" style="background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(16,185,129,0.05)); border: 1px solid var(--border-color);">
+    <div style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600;">Active Database Engine</div>
+            <div style="font-size: 1.15rem; font-weight: 700; font-family: monospace; color: var(--text-color);">{{ db_file }}</div>
+        </div>
+        <div style="display: flex; gap: 2rem;">
+            <div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Database Size</div>
+                <div style="font-weight: 700;">{{ "{:,.1f}".format(file_size / 1024 / 1024) }} MB ({{ "{:,}".format(file_size) }} bytes)</div>
+            </div>
+            <div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Seed Signature</div>
+                <div style="font-weight: 700; font-family: monospace;">{{ seed }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Integrity Status</div>
+                <span class="badge badge-success">Verified Healthy</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Entity Master Counts -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">12 Core Relational Entities</h2>
+        <span class="badge badge-primary">Comprehensive Relational Schema</span>
+    </div>
+    <div class="grid grid-4" style="padding: 1.25rem;">
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Employees</div>
+            <div class="stat-value">{{ entity_counts.employees }}</div>
+            <a href="{{ url_for('admin.employees') }}" class="stat-meta text-primary">View Directory &rarr;</a>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Cost Centers</div>
+            <div class="stat-value">{{ entity_counts.cost_centers }}</div>
+            <a href="{{ url_for('admin.cost_centers') }}" class="stat-meta text-primary">View Allocations &rarr;</a>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Leave Policies</div>
+            <div class="stat-value">{{ entity_counts.leave_policies }}</div>
+            <a href="{{ url_for('admin.policies') }}" class="stat-meta text-primary">View Policies &rarr;</a>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Expense Policies</div>
+            <div class="stat-value">{{ entity_counts.expense_policies }}</div>
+            <a href="{{ url_for('admin.policies') }}" class="stat-meta text-primary">View Policies &rarr;</a>
+        </div>
+
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Approval Rules</div>
+            <div class="stat-value">{{ entity_counts.approval_rules }}</div>
+            <a href="{{ url_for('admin.rules') }}" class="stat-meta text-primary">View Rules Matrix &rarr;</a>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Leave Balances</div>
+            <div class="stat-value">{{ entity_counts.leave_balances }}</div>
+            <span class="stat-meta text-muted">Statutory Entitlements</span>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Leave Requests</div>
+            <div class="stat-value">{{ entity_counts.leave_requests }}</div>
+            <span class="stat-meta text-muted">Workflow Requests</span>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Expense Claims</div>
+            <div class="stat-value">{{ entity_counts.expense_claims }}</div>
+            <span class="stat-meta text-muted">Workflow Requests</span>
+        </div>
+
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Expense Lines</div>
+            <div class="stat-value">{{ entity_counts.expense_lines }}</div>
+            <span class="stat-meta text-muted">Itemized Receipts</span>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Approval Steps</div>
+            <div class="stat-value">{{ entity_counts.approval_steps }}</div>
+            <span class="stat-meta text-muted">Hierarchical Decisions</span>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Reimbursements</div>
+            <div class="stat-value">{{ entity_counts.reimbursements }}</div>
+            <a href="{{ url_for('finance.portal') }}" class="stat-meta text-primary">View Vouchers &rarr;</a>
+        </div>
+        <div class="stat-card" style="border: 1px solid var(--border-color);">
+            <div class="stat-label">Workflow Events</div>
+            <div class="stat-value">{{ entity_counts.workflow_events }}</div>
+            <a href="{{ url_for('admin.audit_log') }}" class="stat-meta text-primary">View Audit Stream &rarr;</a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent System Audit Log -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Recent Lifecycle Audit Events</h2>
+        <a href="{{ url_for('admin.audit_log') }}" class="btn btn-secondary btn-sm">Full Event Stream &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Event ID</th>
+                    <th>Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>Actor</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ev in recent_events %}
+                <tr>
+                    <td class="font-mono text-muted">{{ ev.event_id }}</td>
+                    <td class="text-muted"><small>{{ ev.timestamp.strftime('%Y-%m-%d %H:%M:%S') if ev.timestamp else '—' }}</small></td>
+                    <td>
+                        <span class="badge {% if 'APPROVED' in ev.event_type or 'PAID' in ev.event_type %}badge-success{% elif 'REJECTED' in ev.event_type or 'FAILED' in ev.event_type %}badge-danger{% else %}badge-info{% endif %}">
+                            {{ ev.event_type }}
+                        </span>
+                    </td>
+                    <td>{{ ev.entity_type }}</td>
+                    <td class="font-mono">
+                        {% if ev.entity_type == 'leave_request' %}
+                        <a href="{{ url_for('employee.leave_detail', leave_id=ev.entity_id) }}">{{ ev.entity_id }}</a>
+                        {% elif ev.entity_type == 'expense_claim' %}
+                        <a href="{{ url_for('employee.expense_detail', claim_id=ev.entity_id) }}">{{ ev.entity_id }}</a>
+                        {% else %}
+                        {{ ev.entity_id }}
+                        {% endif %}
+                    </td>
+                    <td>{{ ev.actor_employee_id or 'SYSTEM' }}</td>
+                    <td><small>{{ ev.details }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Operational Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Operational Workflow Dashboard</h1>
+        <p class="page-subtitle">Real-time overview of leave requests, expense claims, approvals, and cost center budget utilization.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('employee.leave_new') }}" class="btn btn-primary">+ Request Leave</a>
+        <a href="{{ url_for('employee.expense_new') }}" class="btn btn-secondary">+ Submit Expense</a>
+        <a href="{{ url_for('approvals.inbox') }}" class="btn btn-secondary">
+            Approvals
+            {% if pending_approvals_count > 0 %}
+                <span class="badge badge-warning">{{ pending_approvals_count }}</span>
+            {% endif %}
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid-4" style="margin-bottom: 1.5rem;">
+    <!-- Leave Card -->
+    <div class="metric-card">
+        <span class="metric-label">Leave Requests</span>
+        <span class="metric-value">{{ stats.leave.total }}</span>
+        <div class="metric-meta">
+            <span class="badge badge-approved">{{ stats.leave.approved }} Approved</span>
+            <span class="badge badge-pending">{{ stats.leave.pending }} Pending</span>
+            <span class="badge badge-rejected">{{ stats.leave.rejected }} Rejected</span>
+        </div>
+    </div>
+
+    <!-- Expense Card -->
+    <div class="metric-card">
+        <span class="metric-label">Expense Claims</span>
+        <span class="metric-value">{{ stats.expense.total }}</span>
+        <div class="metric-meta">
+            <span class="badge badge-approved">{{ stats.expense.approved }} Approved</span>
+            <span class="badge badge-pending">{{ stats.expense.pending }} Pending</span>
+            <span class="badge badge-rejected">{{ stats.expense.rejected }} Rejected</span>
+        </div>
+    </div>
+
+    <!-- Approval Steps Card -->
+    <div class="metric-card">
+        <span class="metric-label">Approval Steps</span>
+        <span class="metric-value">{{ stats.steps.total }}</span>
+        <div class="metric-meta">
+            <span class="badge badge-approved">{{ stats.steps.approved }} Decided OK</span>
+            <span class="badge badge-warning">{{ stats.steps.pending }} In Queue</span>
+            <span class="badge badge-rejected">{{ stats.steps.rejected }} Denied</span>
+        </div>
+    </div>
+
+    <!-- Reimbursements Card -->
+    <div class="metric-card">
+        <span class="metric-label">Reimbursements</span>
+        <span class="metric-value">{{ stats.reimbursements.total }}</span>
+        <div class="metric-meta">
+            <span class="badge badge-paid">{{ stats.reimbursements.paid_count }} Paid</span>
+            <span class="badge badge-pending">{{ stats.reimbursements.pending_count }} Pending</span>
+        </div>
+        <div style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.35rem;">
+            Settled: <strong>${{ "{:,.2f}".format(stats.reimbursements.paid_amount) }}</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Main Two-Column Layout -->
+<div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 1.5rem;">
+    <!-- Left Column: Cost Center Budgets -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Cost Center Budget Utilization (FY 2026)</h2>
+            <a href="{{ url_for('finance.budgets') }}" class="btn btn-secondary btn-sm">View All Budgets</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Country</th>
+                        <th>Annual Budget</th>
+                        <th>Budget Used</th>
+                        <th>Remaining</th>
+                        <th>Utilization %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cc in budget_data[:8] %}
+                        <tr>
+                            <td><strong>{{ cc.code }}</strong></td>
+                            <td>{{ cc.name }}</td>
+                            <td>{{ cc.country }}</td>
+                            <td>{{ cc.currency }} {{ "{:,.2f}".format(cc.annual_budget) }}</td>
+                            <td>{{ cc.currency }} {{ "{:,.2f}".format(cc.budget_used) }}</td>
+                            <td>{{ cc.currency }} {{ "{:,.2f}".format(cc.budget_remaining) }}</td>
+                            <td style="min-width: 140px;">
+                                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.775rem;">
+                                    <span>{{ cc.utilization_percentage }}%</span>
+                                    {% if cc.utilization_percentage > 90 %}
+                                        <span class="badge badge-danger">High</span>
+                                    {% elif cc.utilization_percentage > 70 %}
+                                        <span class="badge badge-warning">Moderate</span>
+                                    {% else %}
+                                        <span class="badge badge-success">Healthy</span>
+                                    {% endif %}
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill {% if cc.utilization_percentage > 90 %}progress-high{% elif cc.utilization_percentage > 70 %}progress-med{% else %}progress-low{% endif %}"
+                                         style="width: {{ cc.utilization_percentage if cc.utilization_percentage <= 100 else 100 }}%;">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right Column: Pending Approvals & Live Activity -->
+    <div>
+        <!-- Urgent Pending Approvals -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Pending Approvals Queue</h2>
+                <a href="{{ url_for('approvals.inbox') }}" class="btn btn-secondary btn-sm">Go to Inbox</a>
+            </div>
+            <div class="card-body" style="padding: 0.75rem 1.25rem;">
+                {% if recent_pending %}
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% for step in recent_pending %}
+                            <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.85rem;">
+                                        {% if step.leave_request_id %}
+                                            <span class="badge badge-info">Leave</span> {{ step.leave_request_id }}
+                                        {% else %}
+                                            <span class="badge badge-info">Expense</span> {{ step.expense_claim_id }}
+                                        {% endif %}
+                                    </div>
+                                    <div style="font-size: 0.775rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                        Level {{ step.authority_level }} &bull; Step {{ step.step_order }} &bull; Approver: <code>{{ step.approver_employee_id }}</code>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a href="{{ url_for('approvals.review', step_id=step.approval_step_id) }}" class="btn btn-secondary btn-sm">Review</a>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p style="color: var(--text-muted); margin: 1rem 0; text-align: center;">No pending approval steps in queue.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Live Workflow Events Stream -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Recent Workflow Audit Trail</h2>
+                <a href="{{ url_for('admin.audit_log') }}" class="btn btn-secondary btn-sm">Audit Log</a>
+            </div>
+            <div class="card-body" style="padding: 0.75rem 1.25rem;">
+                {% if recent_events %}
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% for evt in recent_events %}
+                            <li style="padding: 0.6rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.8rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <strong>{{ evt.event_type }}</strong>
+                                    <span style="color: var(--text-muted); font-size: 0.725rem;">{{ evt.created_at.strftime('%H:%M:%S') if evt.created_at else '' }}</span>
+                                </div>
+                                <div style="color: var(--text-muted); margin-top: 0.15rem;">
+                                    <code>{{ evt.entity_id }}</code> ({{ evt.request_type }}) &bull; {{ evt.from_status or 'start' }} &rarr; <strong>{{ evt.to_status }}</strong>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p style="color: var(--text-muted); margin: 1rem 0; text-align: center;">No audit events recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

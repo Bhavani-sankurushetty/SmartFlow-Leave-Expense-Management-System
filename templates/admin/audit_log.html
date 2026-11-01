@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Log - SmartFlow Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('admin.portal') }}" class="btn btn-secondary btn-sm">&larr; Back to Admin Portal</a>
+        </div>
+        <h1 class="page-title">Immutable Workflow Event Audit Stream</h1>
+        <p class="page-subtitle">Complete chronological event telemetry recording submissions, evaluations, decisions, disbursements and anomalies ({{ total_events }} events logged).</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div style="padding: 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.audit_log') }}" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+                <label class="form-label" style="margin-bottom: 0.25rem;">Filter by Event Type:</label>
+                <select name="event_type" class="form-select">
+                    <option value="all" {% if event_type == 'all' %}selected{% endif %}>All Event Types</option>
+                    <option value="REQUEST_SUBMITTED" {% if event_type == 'REQUEST_SUBMITTED' %}selected{% endif %}>REQUEST_SUBMITTED</option>
+                    <option value="STEP_APPROVED" {% if event_type == 'STEP_APPROVED' %}selected{% endif %}>STEP_APPROVED</option>
+                    <option value="STEP_REJECTED" {% if event_type == 'STEP_REJECTED' %}selected{% endif %}>STEP_REJECTED</option>
+                    <option value="REQUEST_FINALIZED_APPROVED" {% if event_type == 'REQUEST_FINALIZED_APPROVED' %}selected{% endif %}>REQUEST_FINALIZED_APPROVED</option>
+                    <option value="REQUEST_FINALIZED_REJECTED" {% if event_type == 'REQUEST_FINALIZED_REJECTED' %}selected{% endif %}>REQUEST_FINALIZED_REJECTED</option>
+                    <option value="REIMBURSEMENT_CREATED" {% if event_type == 'REIMBURSEMENT_CREATED' %}selected{% endif %}>REIMBURSEMENT_CREATED</option>
+                    <option value="REIMBURSEMENT_PAID" {% if event_type == 'REIMBURSEMENT_PAID' %}selected{% endif %}>REIMBURSEMENT_PAID</option>
+                </select>
+            </div>
+            <div style="align-self: flex-end;">
+                <button type="submit" class="btn btn-primary">Filter Stream</button>
+                {% if event_type != 'all' %}
+                <a href="{{ url_for('admin.audit_log') }}" class="btn btn-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Event ID</th>
+                    <th>Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>Actor ID</th>
+                    <th>Audit Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ev in events %}
+                <tr>
+                    <td class="font-mono text-muted">{{ ev.event_id }}</td>
+                    <td class="text-muted"><small>{{ ev.timestamp.strftime('%Y-%m-%d %H:%M:%S') if ev.timestamp else '—' }}</small></td>
+                    <td>
+                        <span class="badge {% if 'APPROVED' in ev.event_type or 'PAID' in ev.event_type %}badge-success{% elif 'REJECTED' in ev.event_type or 'FAILED' in ev.event_type %}badge-danger{% elif 'CREATED' in ev.event_type or 'SUBMITTED' in ev.event_type %}badge-primary{% else %}badge-secondary{% endif %}">
+                            {{ ev.event_type }}
+                        </span>
+                    </td>
+                    <td>{{ ev.entity_type }}</td>
+                    <td class="font-mono">
+                        {% if ev.entity_type == 'leave_request' %}
+                        <a href="{{ url_for('employee.leave_detail', leave_id=ev.entity_id) }}">{{ ev.entity_id }}</a>
+                        {% elif ev.entity_type == 'expense_claim' %}
+                        <a href="{{ url_for('employee.expense_detail', claim_id=ev.entity_id) }}">{{ ev.entity_id }}</a>
+                        {% else %}
+                        {{ ev.entity_id }}
+                        {% endif %}
+                    </td>
+                    <td><small class="font-mono">{{ ev.actor_employee_id or 'SYSTEM' }}</small></td>
+                    <td><small>{{ ev.details }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

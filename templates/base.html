@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %} - SmartFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <a href="{{ url_for('main.dashboard') }}" class="navbar-brand">
+                <span>⚡ SmartFlow</span>
+                <span class="brand-badge">2.0</span>
+            </a>
+            <ul class="navbar-nav">
+                <li>
+                    <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('employee.hub') }}" class="nav-link {% if request.blueprint == 'employee' %}active{% endif %}">
+                        Employee Portal
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('approvals.inbox') }}" class="nav-link {% if request.blueprint == 'approvals' %}active{% endif %}">
+                        Approvals
+                        {% if pending_approvals_count > 0 %}
+                            <span class="badge badge-warning" style="margin-left: 0.25rem;">{{ pending_approvals_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('finance.portal') }}" class="nav-link {% if request.blueprint == 'finance' %}active{% endif %}">
+                        Finance
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.portal') }}" class="nav-link {% if request.blueprint == 'admin' %}active{% endif %}">
+                        Admin
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="navbar-user-switcher">
+            {% if current_user %}
+                <form action="{{ url_for('main.switch_user') }}" method="POST" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="badge" style="background: rgba(255, 255, 255, 0.15); color: #cbd5e1; font-size: 0.65rem; border: 1px dashed rgba(255,255,255,0.3); padding: 0.2rem 0.4rem; border-radius: 4px;" title="Demonstration Persona Switcher (Simulation Only - Not Production SSO)">Demo Switcher</span>
+                    <div class="user-pill">
+                        <div class="user-avatar">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
+                        <span>{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                        <span style="opacity: 0.7; font-size: 0.75rem;">({{ current_user.country }})</span>
+                    </div>
+                    <select name="employee_id" class="switcher-select" onchange="this.form.submit()" title="Switch demo persona (Simulation Only - Not Production SSO)">
+                        <option value="">Switch Demo Persona (Demo Only)...</option>
+                        <optgroup label="Executive & Administration (Full Access)">
+                            <option value="EMP-000001" {% if current_user.employee_id == 'EMP-000001' %}selected{% endif %}>CEO (EMP-000001) - Executive & Admin Portal</option>
+                            <option value="EMP-000006" {% if current_user.employee_id == 'EMP-000006' %}selected{% endif %}>VP Operations (EMP-000006) - Admin Portal Access</option>
+                        </optgroup>
+                        <optgroup label="Finance Operations (Disbursement Authorized)">
+                            <option value="EMP-000002" {% if current_user.employee_id == 'EMP-000002' %}selected{% endif %}>VP Finance (EMP-000002) - Finance Payment Auth</option>
+                        </optgroup>
+                        <optgroup label="Approvers & Regional Managers">
+                            <option value="EMP-000009" {% if current_user.employee_id == 'EMP-000009' %}selected{% endif %}>VP Engineering (EMP-000009) - Level 4 Approver</option>
+                            <option value="EMP-000020" {% if current_user.employee_id == 'EMP-000020' %}selected{% endif %}>USA Manager (EMP-000020)</option>
+                            <option value="EMP-000003" {% if current_user.employee_id == 'EMP-000003' %}selected{% endif %}>UK Manager (EMP-000003)</option>
+                            <option value="EMP-000014" {% if current_user.employee_id == 'EMP-000014' %}selected{% endif %}>Canada Manager (EMP-000014)</option>
+                        </optgroup>
+                        <optgroup label="Staff Employees (Standard Access - Restricted)">
+                            <option value="EMP-000080" {% if current_user.employee_id == 'EMP-000080' %}selected{% endif %}>EMP-000080 - Staff Employee (Restricted)</option>
+                            {% for e in active_employees[:15] %}
+                                <option value="{{ e.employee_id }}" {% if current_user.employee_id == e.employee_id %}selected{% endif %}>
+                                    {{ e.employee_id }} - {{ e.first_name }} {{ e.last_name }} ({{ e.country }})
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Flash Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button type="button" style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: inherit;" onclick="this.parentElement.remove();">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p><strong>SmartFlow Enterprise</strong> &mdash; Leave and Expense Request Routing System | Deterministic Seed <code>20261022</code> | Multi-Currency Budget Validation</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

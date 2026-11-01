@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Cost Centers Master - SmartFlow Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('admin.portal') }}" class="btn btn-secondary btn-sm">&larr; Back to Admin Portal</a>
+        </div>
+        <h1 class="page-title">Cost Centers Master Registry</h1>
+        <p class="page-subtitle">Organizational budget entities, owner hierarchies, and annual fiscal ceilings.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Cost Center ID</th>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Country</th>
+                    <th>Annual Budget</th>
+                    <th>Owner / Manager</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cc in cost_centers %}
+                <tr>
+                    <td class="font-mono">{{ cc.cost_center_id }}</td>
+                    <td><strong class="font-mono">{{ cc.code }}</strong></td>
+                    <td>{{ cc.name }}</td>
+                    <td><span class="badge badge-info">{{ cc.country }}</span></td>
+                    <td><strong>{{ "{:,.2f}".format(cc.annual_budget) }}</strong></td>
+                    <td>
+                        {% if cc.owner %}
+                        {{ cc.owner.first_name }} {{ cc.owner.last_name }}
+                        <div class="text-muted" style="font-size: 0.75rem;">{{ cc.owner.job_title }}</div>
+                        {% else %}
+                        <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if cc.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge badge-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Review Step {{ step.approval_step_id }} - SmartFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('approvals.inbox') }}" class="btn btn-secondary btn-sm">&larr; Back to Inbox</a>
+        </div>
+        <h1 class="page-title">
+            Review Approval Step: {{ step.approval_step_id }}
+        </h1>
+        <p class="page-subtitle">
+            Evaluating {% if req_type == 'leave' %}Leave Request{% else %}Expense Claim{% endif %}
+            <strong>{{ parent.leave_request_id if req_type == 'leave' else parent.expense_claim_id }}</strong>
+            submitted by {{ parent.employee.first_name }} {{ parent.employee.last_name }}.
+        </p>
+    </div>
+    <div>
+        <span class="badge badge-warning" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+            Awaiting Decision: {{ step.authority_level }}
+        </span>
+    </div>
+</div>
+
+<div class="grid grid-2 mb-4">
+    <!-- Submitter Profile & Request Details -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Request Summary</h2>
+            <span class="badge badge-secondary">{{ parent.status|upper }}</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            <table class="table" style="margin-bottom: 0;">
+                <tbody>
+                    <tr>
+                        <th style="width: 35%;">Employee:</th>
+                        <td>
+                            <strong>{{ parent.employee.first_name }} {{ parent.employee.last_name }}</strong>
+                            <div class="text-muted" style="font-size: 0.8rem;">
+                                {{ parent.employee.job_title }} &bull; {{ parent.employee.department }} ({{ parent.employee.country }})
+                            </div>
+                        </td>
+                    </tr>
+                    {% if req_type == 'leave' %}
+                    <tr>
+                        <th>Policy:</th>
+                        <td><strong>{{ parent.leave_policy.name }}</strong> ({{ parent.leave_policy.category }})</td>
+                    </tr>
+                    <tr>
+                        <th>Date Range:</th>
+                        <td>{{ parent.start_date }} to {{ parent.end_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Duration:</th>
+                        <td><strong style="color: var(--primary);">{{ parent.business_days }} Business Days</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Reason / Notes:</th>
+                        <td>{{ parent.reason or 'No additional notes provided.' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <th>Expense Policy:</th>
+                        <td><strong>{{ parent.expense_policy.category }}</strong> ({{ parent.expense_policy.country }})</td>
+                    </tr>
+                    <tr>
+                        <th>Cost Center:</th>
+                        <td>
+                            <strong>{{ parent.cost_center.code }}</strong> - {{ parent.cost_center.name }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Claim Date:</th>
+                        <td>{{ parent.claim_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Amount:</th>
+                        <td><strong style="color: var(--primary); font-size: 1.25rem;">{{ parent.currency }} {{ parent.total_amount }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Line Items Count:</th>
+                        <td>{{ parent.expense_lines|length }} items</td>
+                    </tr>
+                    <tr>
+                        <th>Description:</th>
+                        <td>{{ parent.purpose or 'No description provided.' }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Approver Action Box -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Authorized Decision Form</h2>
+            <span class="badge badge-info">{{ user.job_title }}</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            {% if step.approver_employee_id != user.employee_id %}
+            <div class="alert alert-warning mb-3">
+                <strong>Notice:</strong> This step is assigned to <strong>{{ step.approver.first_name }} {{ step.approver.last_name }}</strong> ({{ step.approver_employee_id }}). You are logged in as <strong>{{ user.first_name }} {{ user.last_name }}</strong>. Use the persona switcher above to act on their behalf.
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('approvals.decide') }}">
+                <input type="hidden" name="approval_step_id" value="{{ step.approval_step_id }}">
+
+                <div class="form-group mb-3">
+                    <label class="form-label" for="comments">Approver Comments / Audit Justification:</label>
+                    <textarea class="form-control" id="comments" name="comments" rows="4" placeholder="Enter evaluation remarks, compliance confirmation or rejection rationale..."></textarea>
+                    <small class="text-muted">Comments are permanently recorded in the immutable workflow event audit log.</small>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" name="decision" value="approved" class="btn btn-success btn-lg" style="flex: 1;" onclick="return confirm('Confirm APPROVAL for this step?');">
+                        &#10003; Authorize & Approve
+                    </button>
+                    <button type="submit" name="decision" value="rejected" class="btn btn-danger btn-lg" style="flex: 1;" onclick="return confirm('Confirm REJECTION of this request?');">
+                        &#10007; Reject Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Workflow Stepper Progression -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">Multi-Level Workflow Progression</h2>
+        <span class="text-muted" style="font-size: 0.85rem;">Step sequence for this request</span>
+    </div>
+    <div style="padding: 1.5rem;">
+        <div class="stepper">
+            {% for s in all_steps %}
+            <div class="stepper-step">
+                <div class="step-badge {% if s.decision == 'approved' %}step-approved{% elif s.decision == 'rejected' %}step-rejected{% elif s.decision == 'pending' %}step-pending{% endif %}">
+                    {{ s.step_order }}
+                </div>
+                <div class="step-content">
+                    <div class="step-title">
+                        {{ s.authority_level }} Approval
+                        {% if s.approval_step_id == step.approval_step_id %}
+                        <span class="badge badge-warning" style="margin-left: 0.5rem;">Current Step</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-muted" style="font-size: 0.85rem;">
+                        Approver: <strong>{{ s.approver.first_name }} {{ s.approver.last_name }}</strong> ({{ s.approver.job_title }})
+                    </div>
+                    <div class="text-muted" style="font-size: 0.8rem;">
+                        Status: <strong>{{ s.decision|upper }}</strong>
+                        {% if s.decided_at %} &bull; {{ s.decided_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+                        {% if s.comments %} &bull; <em>"{{ s.comments }}"</em>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if req_type == 'expense' and parent.expense_lines %}
+<!-- Itemized Lines for Expense Claims -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Expense Line Items ({{ parent.expense_lines|length }})</h2>
+        <span class="badge badge-secondary">{{ parent.currency }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Receipt Hash</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in parent.expense_lines %}
+                <tr>
+                    <td>{{ line.line_number }}</td>
+                    <td><span class="badge badge-info">{{ line.category }}</span></td>
+                    <td>{{ line.description or '—' }}</td>
+                    <td>{{ line.expense_date }}</td>
+                    <td class="font-mono text-muted">
+                        {% if line.description and 'SHA256:' in line.description %}
+                            <span title="{{ line.description.split('SHA256:')[1].split(']')[0].strip() }}">{{ line.description.split('SHA256:')[1].split(']')[0].strip()[:16] }}...</span>
+                        {% elif line.description and '[Receipt:' in line.description %}
+                            <span>{{ line.description.split('[Receipt:')[1].split(']')[0].strip() }}</span>
+                        {% else %}
+                            <span>Not provided</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ parent.currency }} {{ line.amount }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

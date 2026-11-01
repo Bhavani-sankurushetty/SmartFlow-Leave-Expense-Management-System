@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Approver Inbox - SmartFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Approval Action Inbox</h1>
+        <p class="page-subtitle">Review, validate and authorize requests awaiting your approval as {{ user.job_title }} ({{ user.role }}).</p>
+    </div>
+    <div>
+        <span class="badge badge-info">{{ tasks|length }} Pending Action{% if tasks|length != 1 %}s{% endif %}</span>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">Pending Approvals Queue</h2>
+        <span class="badge badge-warning">Requires Immediate Decision</span>
+    </div>
+    {% if tasks %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Request ID</th>
+                    <th>Submitter</th>
+                    <th>Details</th>
+                    <th>Amount / Days</th>
+                    <th>Level</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tasks %}
+                <tr>
+                    <td>
+                        {% if t.request_type == 'leave' %}
+                        <span class="badge badge-info">Leave</span>
+                        {% else %}
+                        <span class="badge badge-primary">Expense</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('approvals.review', step_id=t.step.approval_step_id) }}" style="font-weight: 600;">
+                            {{ t.parent_id }}
+                        </a>
+                        <div class="text-muted" style="font-size: 0.75rem;">Step: {{ t.step.approval_step_id }}</div>
+                    </td>
+                    <td>
+                        {% if t.submitter %}
+                        <strong>{{ t.submitter.first_name }} {{ t.submitter.last_name }}</strong>
+                        <div class="text-muted" style="font-size: 0.75rem;">{{ t.submitter.job_title }} &bull; {{ t.submitter.country }}</div>
+                        {% else %}
+                        <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ t.details }}</td>
+                    <td><strong>{{ t.amount_display }}</strong></td>
+                    <td><span class="badge badge-secondary">{{ t.authority_level }}</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('approvals.review', step_id=t.step.approval_step_id) }}" class="btn btn-primary btn-sm">
+                                Review
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="margin-bottom: 0.75rem; color: var(--success);">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3>All Caught Up!</h3>
+        <p>You have no pending requests requiring approval. If you are simulating testing, switch to another manager or executive in the top bar.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Recent Decisions Audit History</h2>
+        <span class="text-muted" style="font-size: 0.85rem;">Last 25 decisions rendered by {{ user.first_name }} {{ user.last_name }}</span>
+    </div>
+    {% if history %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Step ID</th>
+                    <th>Type</th>
+                    <th>Parent Request</th>
+                    <th>Authority Level</th>
+                    <th>Decision</th>
+                    <th>Comments</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in history %}
+                <tr>
+                    <td class="font-mono text-muted">{{ s.approval_step_id }}</td>
+                    <td>
+                        {% if s.leave_request_id %}
+                        <span class="badge badge-info">Leave</span>
+                        {% else %}
+                        <span class="badge badge-primary">Expense</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.leave_request_id %}
+                        <a href="{{ url_for('employee.leave_detail', leave_id=s.leave_request_id) }}">{{ s.leave_request_id }}</a>
+                        {% elif s.expense_claim_id %}
+                        <a href="{{ url_for('employee.expense_detail', claim_id=s.expense_claim_id) }}">{{ s.expense_claim_id }}</a>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge badge-secondary">{{ s.authority_level }}</span></td>
+                    <td>
+                        {% if s.decision == 'approved' %}
+                        <span class="badge badge-success">Approved</span>
+                        {% elif s.decision == 'rejected' %}
+                        <span class="badge badge-danger">Rejected</span>
+                        {% else %}
+                        <span class="badge badge-warning">{{ s.decision|capitalize }}</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ s.comments or '—' }}</small></td>
+                    <td class="text-muted"><small>{{ s.decided_at.strftime('%Y-%m-%d %H:%M') if s.decided_at else '—' }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
+        <p>No decision history recorded yet for this approver profile.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

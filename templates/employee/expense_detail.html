@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Expense Claim {{ claim.expense_claim_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h1 class="page-title">{{ claim.expense_claim_id }}</h1>
+            <span class="badge badge-{{ claim.status }}">{{ claim.status }}</span>
+        </div>
+        <p class="page-subtitle">Submitted by <strong>{{ claim.employee.first_name }} {{ claim.employee.last_name }}</strong> on {{ claim.claim_date }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('employee.hub') }}" class="btn btn-secondary">&larr; Back to Portal</a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Claim Summary & Reimbursement -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Claim Overview</h2>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Total Amount</span>
+                        <strong style="font-size: 1.35rem; color: var(--primary);">{{ claim.currency }} {{ "{:,.2f}".format(claim.total_amount) }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Category</span>
+                        <strong>{{ claim.expense_policy.category }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Cost Center</span>
+                        <strong>{{ claim.cost_center.code }} ({{ claim.cost_center.name }})</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Policy Limit</span>
+                        <strong>{{ claim.currency }} {{ "{:,.2f}".format(claim.expense_policy.max_amount) }}</strong>
+                    </div>
+                </div>
+
+                <!-- Reimbursement Status Block -->
+                {% if reimbursements %}
+                    {% set r = reimbursements[0] %}
+                    <div class="alert {% if r.status == 'paid' %}alert-success{% else %}alert-warning{% endif %}" style="margin: 0;">
+                        <div>
+                            <strong>Reimbursement Voucher: <code>{{ r.reimbursement_id }}</code></strong>
+                            <div style="font-size: 0.8rem; margin-top: 0.25rem;">
+                                Amount: <strong>{{ claim.currency }} {{ "{:,.2f}".format(r.amount) }}</strong> &bull; Status: <span class="badge badge-{{ r.status }}">{{ r.status }}</span>
+                                {% if r.paid_at %}
+                                    &bull; Paid on {{ r.paid_at.strftime('%Y-%m-%d %H:%M UTC') }}
+                                {% else %}
+                                    &bull; Awaiting financial disbursement
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info" style="margin: 0;">
+                        <span>Reimbursement voucher will be generated automatically once final approval is achieved.</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Expense Line Items ({{ lines|length }})</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in lines %}
+                            <tr>
+                                <td>{{ line.line_number }}</td>
+                                <td><span class="badge badge-neutral">{{ line.category }}</span></td>
+                                <td>
+                                    <div>{{ line.description }}</div>
+                                </td>
+                                <td>{{ line.expense_date }}</td>
+                                <td><strong>{{ claim.currency }} {{ "{:,.2f}".format(line.amount) }}</strong></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Approval Stepper -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Approval Workflow Sequence</h2>
+            </div>
+            <div class="card-body">
+                {% if steps %}
+                    <div class="stepper">
+                        {% for s in steps %}
+                            <div class="step-item {{ s.decision }}">
+                                <div class="step-dot"></div>
+                                <div class="step-header">
+                                    <span>Step {{ s.step_order }}: Level {{ s.authority_level }} Review</span>
+                                    <span class="badge badge-{{ s.decision }}">{{ s.decision }}</span>
+                                </div>
+                                <div class="step-body">
+                                    <div>Approver: <strong>{{ s.approver.first_name }} {{ s.approver.last_name }}</strong> (<code>{{ s.approver_employee_id }}</code>)</div>
+                                    {% if s.decided_at %}
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                            Decided on {{ s.decided_at.strftime('%Y-%m-%d %H:%M UTC') }}
+                                        </div>
+                                    {% endif %}
+                                    {% if s.comments %}
+                                        <div style="font-style: italic; background-color: #f8fafc; padding: 0.35rem 0.5rem; border-radius: var(--radius-sm); margin-top: 0.35rem;">
+                                            &ldquo;{{ s.comments }}&rdquo;
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: var(--text-muted); text-align: center; margin: 1.5rem 0;">No approval steps generated (claim not routed).</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Audit Trail -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Event Audit Trail</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Actor</th>
+                            <th>Transition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if events %}
+                            {% for evt in events %}
+                                <tr>
+                                    <td><span class="badge badge-neutral">{{ evt.event_type }}</span></td>
+                                    <td>{{ evt.actor.first_name ~ ' ' ~ evt.actor.last_name if evt.actor else evt.actor_employee_id or 'System' }}</td>
+                                    <td>{{ evt.from_status or 'start' }} &rarr; <strong>{{ evt.to_status }}</strong></td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1rem;">No events found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Cost Center Budgets - SmartFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('finance.portal') }}" class="btn btn-secondary btn-sm">&larr; Back to Finance Portal</a>
+        </div>
+        <h1 class="page-title">Cost Center Budget Management</h1>
+        <p class="page-subtitle">Multi-currency annual budget allocation, actual utilization tracking, and overrun safeguards for Calendar Year 2026.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">Cost Center Budget Allocations (20 Centers)</h2>
+        <span class="badge badge-info">Strict Budget Enforcement Active</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Country / Currency</th>
+                    <th>Owner</th>
+                    <th>Annual Budget</th>
+                    <th>Approved Utilized</th>
+                    <th>Remaining</th>
+                    <th>Approved Claims</th>
+                    <th>Utilization Rate</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in budgets %}
+                <tr>
+                    <td><strong class="font-mono">{{ b.code }}</strong></td>
+                    <td>{{ b.name }}</td>
+                    <td>
+                        <span class="badge badge-secondary">{{ b.country }} ({{ b.currency }})</span>
+                    </td>
+                    <td>
+                        {% if b.owner %}
+                        {{ b.owner.first_name }} {{ b.owner.last_name }}
+                        {% else %}
+                        <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ b.currency }} {{ "{:,.2f}".format(b.annual_budget) }}</strong></td>
+                    <td style="color: var(--primary);">{{ b.currency }} {{ "{:,.2f}".format(b.budget_used) }}</td>
+                    <td style="color: {% if b.budget_remaining < 0 %}var(--danger){% else %}var(--success){% endif %}; font-weight: 600;">
+                        {{ b.currency }} {{ "{:,.2f}".format(b.budget_remaining) }}
+                    </td>
+                    <td style="text-align: center;">{{ b.approved_claims_count }}</td>
+                    <td style="min-width: 160px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="progress" style="flex: 1;">
+                                <div class="progress-bar {% if b.utilization_percentage > 90 %}progress-bar-danger{% elif b.utilization_percentage > 70 %}progress-bar-warning{% else %}progress-bar-primary{% endif %}"
+                                     style="width: {{ [b.utilization_percentage, 100]|min }}%;"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: 600;">{{ b.utilization_percentage }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if b.utilization_percentage >= 100 %}
+                        <span class="badge badge-danger">Exhausted</span>
+                        {% elif b.utilization_percentage >= 80 %}
+                        <span class="badge badge-warning">Near Limit</span>
+                        {% else %}
+                        <span class="badge badge-success">Healthy</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <strong>Budget Policy Governance:</strong> All expense claims submitted against a cost center are validated during multi-level approval. Any claim that causes annual utilization to exceed 100% of the cost center's authorized budget triggers an automatic <code>BUDGET_EXCEEDED</code> rejection event with zero double-counting.
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Leave Request {{ req.leave_request_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h1 class="page-title">{{ req.leave_request_id }}</h1>
+            <span class="badge badge-{{ req.status }}">{{ req.status }}</span>
+        </div>
+        <p class="page-subtitle">Submitted by <strong>{{ req.employee.first_name }} {{ req.employee.last_name }}</strong> on {{ req.submitted_at.strftime('%Y-%m-%d %H:%M UTC') if req.submitted_at else '--' }}</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('employee.hub') }}" class="btn btn-secondary">&larr; Back to Portal</a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Request Information -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Leave Details</h2>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Policy</span>
+                    <strong>{{ req.leave_policy.name }}</strong>
+                </div>
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Leave Type</span>
+                    <span class="badge badge-neutral">{{ req.leave_policy.leave_type }}</span>
+                </div>
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Date Span</span>
+                    <strong>{{ req.start_date }} &rarr; {{ req.end_date }}</strong>
+                </div>
+                <div>
+                    <span style="color: var(--text-muted); font-size: 0.775rem; display: block;">Working Days Requested</span>
+                    <strong style="color: var(--primary); font-size: 1.1rem;">{{ req.business_days }} days</strong>
+                </div>
+            </div>
+
+            <!-- Workflow Summary Alert -->
+            <div class="alert {% if req.status == 'approved' %}alert-success{% elif req.status == 'rejected' %}alert-danger{% else %}alert-info{% endif %}" style="margin: 0;">
+                <div>
+                    <strong>Status: {{ req.status|upper }}</strong>
+                    <div style="font-size: 0.8rem; margin-top: 0.25rem;">
+                        {% if req.status == 'approved' %}
+                            Request fully approved through all required authority levels.
+                        {% elif req.status == 'rejected' %}
+                            Request was rejected during review or failed eligibility constraints.
+                        {% else %}
+                            Request currently in sequential review queue.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Approval Stepper -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Approval Workflow Sequence</h2>
+        </div>
+        <div class="card-body">
+            {% if steps %}
+                <div class="stepper">
+                    {% for s in steps %}
+                        <div class="step-item {{ s.decision }}">
+                            <div class="step-dot"></div>
+                            <div class="step-header">
+                                <span>Step {{ s.step_order }}: Level {{ s.authority_level }} Review</span>
+                                <span class="badge badge-{{ s.decision }}">{{ s.decision }}</span>
+                            </div>
+                            <div class="step-body">
+                                <div>Approver: <strong>{{ s.approver.first_name }} {{ s.approver.last_name }}</strong> (<code>{{ s.approver_employee_id }}</code>)</div>
+                                {% if s.decided_at %}
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                        Decided on {{ s.decided_at.strftime('%Y-%m-%d %H:%M UTC') }}
+                                    </div>
+                                {% endif %}
+                                {% if s.comments %}
+                                    <div style="font-style: italic; background-color: #f8fafc; padding: 0.35rem 0.5rem; border-radius: var(--radius-sm); margin-top: 0.35rem;">
+                                        &ldquo;{{ s.comments }}&rdquo;
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: var(--text-muted); text-align: center; margin: 1.5rem 0;">No approval steps generated (request not routed).</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Audit Trail -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Immutable Event History</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Event ID</th>
+                    <th>Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Actor</th>
+                    <th>Transition</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if events %}
+                    {% for evt in events %}
+                        <tr>
+                            <td><code>{{ evt.event_id }}</code></td>
+                            <td>{{ evt.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if evt.created_at else '--' }}</td>
+                            <td><span class="badge badge-neutral">{{ evt.event_type }}</span></td>
+                            <td>{{ evt.actor.first_name ~ ' ' ~ evt.actor.last_name if evt.actor else evt.actor_employee_id or 'System' }}</td>
+                            <td>{{ evt.from_status or 'init' }} &rarr; <strong>{{ evt.to_status }}</strong></td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No audit events found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

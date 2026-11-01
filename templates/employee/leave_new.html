@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Request Leave{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Submit Leave Request</h1>
+        <p class="page-subtitle">Draft a new leave request under statutory policies for {{ user.country }}.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('employee.hub') }}" class="btn btn-secondary">&larr; Back to Portal</a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Leave Request Details</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('employee.leave_new') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="leave_policy_id">Leave Policy *</label>
+                    <select name="leave_policy_id" id="leave_policy_id" class="form-select" required>
+                        <option value="">Select a statutory policy...</option>
+                        {% for p in policies %}
+                            <option value="{{ p.leave_policy_id }}">
+                                {{ p.name }} (Max consecutive: {{ p.max_consecutive_days if p.max_consecutive_days is not none else 'None' }}, Notice: {{ p.min_notice_days }} days)
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Policies available for {{ user.country }} employees.</div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label" for="start_date">Start Date *</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control" required min="2026-01-01" max="2026-12-31">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="end_date">End Date *</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control" required min="2026-01-01" max="2026-12-31">
+                    </div>
+                </div>
+
+                <div id="leave_calc_alert" class="alert alert-info" style="display: none;"></div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Submit & Route for Approval</button>
+                    <a href="{{ url_for('employee.hub') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live Calculation & Summary Card -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Leave Calculation</h3>
+            </div>
+            <div class="card-body" style="font-size: 0.85rem;">
+                <div style="margin-bottom: 1rem;">
+                    <span style="color: var(--text-muted); display: block; font-size: 0.775rem;">Calculated Business Days:</span>
+                    <strong id="calculated_business_days" style="font-size: 1.25rem; color: var(--primary);">--</strong>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Excludes weekends & statutory {{ user.country }} holidays.</div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <span style="color: var(--text-muted); display: block; font-size: 0.775rem;">Available Leave Balance:</span>
+                    <strong id="available_balance_display" style="font-size: 1.25rem; color: var(--text-main);">--</strong>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    <p style="margin: 0 0 0.5rem 0;"><strong>Approval Flow:</strong></p>
+                    <ul style="padding-left: 1.2rem; margin: 0;">
+                        <li>Evaluated against employee tenure and holiday calendar</li>
+                        <li>Assigned to direct manager for Level 1 authorization</li>
+                        <li>Overlaps with approved leaves are prevented</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Finance Portal - SmartFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Finance & Reimbursement Portal</h1>
+        <p class="page-subtitle">Disbursement management, reimbursement voucher processing and cost center budget monitoring.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('finance.budgets') }}" class="btn btn-secondary">
+            View Budget Allocations &rarr;
+        </a>
+    </div>
+</div>
+
+<!-- KPI Summary Cards -->
+<div class="grid grid-3 mb-4">
+    <div class="card stat-card">
+        <div class="stat-label">Total Reimbursement Volume</div>
+        <div class="stat-value">{{ stats.total_count }}</div>
+        <div class="stat-meta">Lifetime vouchers generated across all entities</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-label">Pending Disbursements</div>
+        <div class="stat-value" style="color: var(--warning);">{{ stats.pending_count }}</div>
+        <div class="stat-meta">Vouchers authorized and ready for settlement</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-label">Disbursed / Paid</div>
+        <div class="stat-value" style="color: var(--success);">{{ stats.paid_count }}</div>
+        <div class="stat-meta">Vouchers successfully paid to employees</div>
+    </div>
+</div>
+
+<!-- Reimbursement Vouchers Queue -->
+<div class="card mb-4">
+    <div class="card-header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 class="card-title">Reimbursement Vouchers</h2>
+            <div class="btn-group">
+                <a href="{{ url_for('finance.portal', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+                    All ({{ stats.total_count }})
+                </a>
+                <a href="{{ url_for('finance.portal', status='pending') }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}">
+                    Pending ({{ stats.pending_count }})
+                </a>
+                <a href="{{ url_for('finance.portal', status='paid') }}" class="btn btn-sm {% if status_filter == 'paid' %}btn-primary{% else %}btn-secondary{% endif %}">
+                    Paid ({{ stats.paid_count }})
+                </a>
+            </div>
+        </div>
+        <span class="text-muted" style="font-size: 0.85rem;">Displaying latest 100 records</span>
+    </div>
+
+    {% if reimbursements %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Voucher ID</th>
+                    <th>Claim ID</th>
+                    <th>Beneficiary</th>
+                    <th>Amount</th>
+                    <th>Payment Method</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Paid At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reimbursements %}
+                <tr>
+                    <td class="font-mono"><strong>{{ r.reimbursement_id }}</strong></td>
+                    <td>
+                        <a href="{{ url_for('employee.expense_detail', claim_id=r.expense_claim_id) }}">
+                            {{ r.expense_claim_id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if r.expense_claim and r.expense_claim.employee %}
+                        {{ r.expense_claim.employee.first_name }} {{ r.expense_claim.employee.last_name }}
+                        <div class="text-muted" style="font-size: 0.75rem;">{{ r.expense_claim.employee.country }} &bull; {{ r.expense_claim.employee.department }}</div>
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color: var(--primary);">
+                            {{ r.expense_claim.currency if r.expense_claim else 'USD' }} {{ r.amount }}
+                        </strong>
+                    </td>
+                    <td><span class="badge badge-secondary">{{ r.payment_method }}</span></td>
+                    <td>
+                        {% if r.status == 'paid' %}
+                        <span class="badge badge-success">Paid</span>
+                        {% elif r.status == 'pending' %}
+                        <span class="badge badge-warning">Pending Payment</span>
+                        {% else %}
+                        <span class="badge badge-secondary">{{ r.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted"><small>{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '—' }}</small></td>
+                    <td class="text-muted"><small>{{ r.paid_at.strftime('%Y-%m-%d %H:%M') if r.paid_at else '—' }}</small></td>
+                    <td>
+                        {% if r.status == 'pending' %}
+                            {% if current_user and (current_user.department == 'Finance' or current_user.role == 'Executive') %}
+                            <form method="POST" action="{{ url_for('finance.pay', reimbursement_id=r.reimbursement_id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Process disbursement of {{ r.amount }} for {{ r.reimbursement_id }}?');">
+                                    &#10003; Disburse / Pay
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge badge-secondary" title="Disbursement restricted to authorized Finance personnel or Executives" style="font-size: 0.75rem;">&#128274; Finance Auth Required</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="text-muted" style="font-size: 0.85rem;">Settled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+        <p>No reimbursement vouchers found for the selected filter.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Cost Center Budget Health Overview -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Cost Center Budget Health (CY 2026)</h2>
+        <a href="{{ url_for('finance.budgets') }}" class="btn btn-secondary btn-sm">Full Budget Analysis &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Cost Center</th>
+                    <th>Country</th>
+                    <th>Annual Budget</th>
+                    <th>Utilized Budget</th>
+                    <th>Remaining Budget</th>
+                    <th>Utilization</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in budget_overview[:8] %}
+                <tr>
+                    <td>
+                        <strong>{{ b.code }}</strong> - {{ b.name }}
+                    </td>
+                    <td><span class="badge badge-info">{{ b.country }} ({{ b.currency }})</span></td>
+                    <td>{{ b.currency }} {{ "{:,.2f}".format(b.annual_budget) }}</td>
+                    <td>{{ b.currency }} {{ "{:,.2f}".format(b.budget_used) }}</td>
+                    <td>{{ b.currency }} {{ "{:,.2f}".format(b.budget_remaining) }}</td>
+                    <td style="min-width: 150px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="progress" style="flex: 1;">
+                                <div class="progress-bar {% if b.utilization_percentage > 90 %}progress-bar-danger{% elif b.utilization_percentage > 70 %}progress-bar-warning{% else %}progress-bar-primary{% endif %}"
+                                     style="width: {{ [b.utilization_percentage, 100]|min }}%;"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: 600;">{{ b.utilization_percentage }}%</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Submit Expense Claim{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Submit Multi-Line Expense Claim</h1>
+        <p class="page-subtitle">Submit expense receipts for reimbursement in <strong>{{ currency }}</strong>.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{{ url_for('employee.hub') }}" class="btn btn-secondary">&larr; Back to Portal</a>
+    </div>
+</div>
+
+<form action="{{ url_for('employee.expense_new') }}" method="POST">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Claim Header</h2>
+        </div>
+        <div class="card-body">
+            <div class="grid-3">
+                <div class="form-group">
+                    <label class="form-label" for="cost_center_id">Cost Center *</label>
+                    <select name="cost_center_id" id="cost_center_id" class="form-select" required>
+                        {% for cc in cost_centers %}
+                            <option value="{{ cc.cost_center_id }}" {% if cc.cost_center_id == user.cost_center_id %}selected{% endif %}>
+                                {{ cc.code }} - {{ cc.name }} ({{ cc.country }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="expense_policy_id">Primary Policy / Category *</label>
+                    <select name="expense_policy_id" id="expense_policy_id" class="form-select" required>
+                        {% for p in policies %}
+                            <option value="{{ p.expense_policy_id }}">
+                                {{ p.category }} (Limit: {{ currency }} {{ "{:,.2f}".format(p.max_amount) }}{% if p.receipt_required_above %}, Receipt > {{ p.receipt_required_above }}{% endif %})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="claim_date">Claim Date *</label>
+                    <input type="date" name="claim_date" id="claim_date" class="form-control" value="2026-10-31" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Lines Card -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Expense Line Items</h2>
+            <button type="button" id="add_expense_line_btn" class="btn btn-secondary btn-sm">+ Add Line Item</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">Description *</th>
+                        <th style="width: 20%;">Category *</th>
+                        <th style="width: 15%;">Expense Date *</th>
+                        <th style="width: 15%;">Amount ({{ currency }}) *</th>
+                        <th style="width: 10%;">Receipt File</th>
+                        <th style="width: 5%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="expense_lines_tbody">
+                    <tr>
+                        <td>
+                            <input type="text" name="line_description[]" class="form-control" placeholder="e.g. Client meeting lunch" required>
+                        </td>
+                        <td>
+                            <select name="line_category[]" class="form-select" required>
+                                <option value="Meals">Meals</option>
+                                <option value="Travel">Travel</option>
+                                <option value="Accommodation">Accommodation</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Office Supplies">Office Supplies</option>
+                                <option value="Software">Software</option>
+                                <option value="Training">Training</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="date" name="line_date[]" class="form-control" value="2026-10-30" required>
+                        </td>
+                        <td>
+                            <input type="number" step="0.01" min="0.01" name="line_amount[]" class="form-control line-amount-input" placeholder="0.00" value="75.00" required>
+                        </td>
+                        <td style="text-align: center;">
+                            <label style="font-size: 0.8rem; cursor: pointer;">
+                                <input type="checkbox" name="line_receipt_1" value="1" checked> Attached
+                            </label>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm remove-line-btn">&times;</button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #f8fafc; font-weight: 700;">
+                        <td colspan="3" style="text-align: right; padding: 1rem;">Total Claim Amount:</td>
+                        <td colspan="3" style="padding: 1rem;">
+                            <span style="font-size: 1.15rem; color: var(--primary);">{{ currency }} <span id="claim_total_amount_display">75.00</span></span>
+                            <input type="hidden" name="total_amount" id="total_amount_hidden" value="75.00">
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <a href="{{ url_for('employee.hub') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Submit Claim & Route for Approval</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,317 @@
+{
+  "report_id": "VAL-REP-1793522539",
+  "generated_at": "2026-11-01T08:42:19.196046+00:00",
+  "status": "PASSED",
+  "dataset_integrity": {
+    "is_valid": true,
+    "total_checks": 4,
+    "checks": [
+      {
+        "name": "foreign_key_check",
+        "passed": true,
+        "details": "0 violations"
+      },
+      {
+        "name": "sqlite_integrity_check",
+        "passed": true,
+        "details": "PRAGMA integrity_check = ok"
+      },
+      {
+        "name": "expense_totals_reconciliation",
+        "passed": true,
+        "details": "Checked 1000 claims; 0 mismatch(es)"
+      },
+      {
+        "name": "date_chronology_check",
+        "passed": true,
+        "details": "0 date inconsistency violation(s)"
+      }
+    ],
+    "errors": []
+  },
+  "reproducibility": {
+    "is_reproducible": true,
+    "seed": 20261022,
+    "total_records": 18,
+    "checks": [
+      {
+        "name": "record_count_stability",
+        "passed": true,
+        "details": "Run 1 count=18, Run 2 count=18"
+      },
+      {
+        "name": "deterministic_field_values",
+        "passed": true,
+        "details": "All 18 records matched perfectly across repeated planning."
+      },
+      {
+        "name": "seed_variance_check",
+        "passed": true,
+        "details": "Alternate seed (20262021) planned 18 records cleanly."
+      }
+    ],
+    "errors": []
+  },
+  "anomaly_detection": {
+    "execution_mode": "ISOLATED_FIXTURE_EVALUATION",
+    "manifest_path": "C:\\Users\\Karthik\\Desktop\\SmartFlow\\ground_truth\\anomaly_manifest.json",
+    "total_evaluated": 18,
+    "anomalous_ground_truth": 14,
+    "normal_ground_truth": 4,
+    "confusion_matrix": {
+      "true_positives": 14,
+      "false_positives": 0,
+      "true_negatives": 4,
+      "false_negatives": 0
+    },
+    "metrics": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "specificity": 1.0,
+      "f1_score": 1.0
+    },
+    "records": [
+      {
+        "anomaly_id": "ANOM-000001",
+        "entity_id": "EXP-2026-000001",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "POLICY_LIMIT_EXCEEDED",
+        "detected_code": "POLICY_LIMIT_EXCEEDED",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000002",
+        "entity_id": "EXPL-EXP-2026-000003-01",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "RECEIPT_REQUIRED",
+        "detected_code": "RECEIPT_REQUIRED",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000003",
+        "entity_id": "EXPL-EXP-2026-000006-01",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "DUPLICATE_RECEIPT",
+        "detected_code": "DUPLICATE_RECEIPT",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000004",
+        "entity_id": "EXP-2026-000014",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "CLAIM_TOTAL_MISMATCH",
+        "detected_code": "CLAIM_TOTAL_MISMATCH",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000005",
+        "entity_id": "EXPL-EXP-2026-000019-01",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "INVALID_EXPENSE_AMOUNT",
+        "detected_code": "INVALID_EXPENSE_AMOUNT",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000006",
+        "entity_id": "EXP-2026-000020",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "EXPENSE_DATE_OUTSIDE_EMPLOYMENT",
+        "detected_code": "EXPENSE_DATE_OUTSIDE_EMPLOYMENT",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000007",
+        "entity_id": "EXPL-EXP-2026-000029-01",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "CATEGORY_POLICY_MISMATCH",
+        "detected_code": "CATEGORY_POLICY_MISMATCH",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000008",
+        "entity_id": "LVE-2026-000001",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "BALANCE_EXCEEDED",
+        "detected_code": "BALANCE_EXCEEDED",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000009",
+        "entity_id": "LVE-2026-000041",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "POLICY_LIMIT_EXCEEDED",
+        "detected_code": "POLICY_LIMIT_EXCEEDED",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000010",
+        "entity_id": "LVE-2026-000028",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "OUTSIDE_EMPLOYMENT_PERIOD",
+        "detected_code": "OUTSIDE_EMPLOYMENT_PERIOD",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000011",
+        "entity_id": "LVE-2026-000058",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "COUNTRY_POLICY_MISMATCH",
+        "detected_code": "COUNTRY_POLICY_MISMATCH",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000012",
+        "entity_id": "LVE-2026-000094",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "INACTIVE_OR_MISSING_APPROVER",
+        "detected_code": "INACTIVE_OR_MISSING_APPROVER",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000013",
+        "entity_id": "SYNTHETIC-STEP-01",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "UNAUTHORIZED_APPROVER",
+        "detected_code": "UNAUTHORIZED_APPROVER",
+        "match": true
+      },
+      {
+        "anomaly_id": "ANOM-000014",
+        "entity_id": "SYNTHETIC-STEP-02",
+        "expected_label": "ANOMALOUS",
+        "detected_label": "ANOMALOUS",
+        "expected_code": "PENDING_PRIOR_STEPS",
+        "detected_code": "PENDING_PRIOR_STEPS",
+        "match": true
+      },
+      {
+        "anomaly_id": "NORM-000015",
+        "entity_id": "EXP-2026-000051",
+        "expected_label": "NORMAL",
+        "detected_label": "NORMAL",
+        "expected_code": "ELIGIBLE_FOR_APPROVAL",
+        "detected_code": "ELIGIBLE_FOR_APPROVAL",
+        "match": true
+      },
+      {
+        "anomaly_id": "NORM-000016",
+        "entity_id": "EXP-2026-000084",
+        "expected_label": "NORMAL",
+        "detected_label": "NORMAL",
+        "expected_code": "ELIGIBLE_FOR_APPROVAL",
+        "detected_code": "ELIGIBLE_FOR_APPROVAL",
+        "match": true
+      },
+      {
+        "anomaly_id": "NORM-000017",
+        "entity_id": "LVE-2026-000084",
+        "expected_label": "NORMAL",
+        "detected_label": "NORMAL",
+        "expected_code": "ELIGIBLE_FOR_APPROVAL",
+        "detected_code": "ELIGIBLE_FOR_APPROVAL",
+        "match": true
+      },
+      {
+        "anomaly_id": "NORM-000018",
+        "entity_id": "LVE-2026-000090",
+        "expected_label": "NORMAL",
+        "detected_label": "NORMAL",
+        "expected_code": "ELIGIBLE_FOR_APPROVAL",
+        "detected_code": "ELIGIBLE_FOR_APPROVAL",
+        "match": true
+      }
+    ]
+  },
+  "approval_workflow_lifecycle": {
+    "is_valid": true,
+    "total_checks": 12,
+    "checks": [
+      {
+        "name": "approval_step_single_parent",
+        "passed": true,
+        "details": "2965 steps checked; 0 ambiguous step(s)"
+      },
+      {
+        "name": "approval_step_sequence_continuity",
+        "passed": true,
+        "details": "1720 routed requests checked; 0 sequence issue(s)"
+      },
+      {
+        "name": "self_approval_prevention",
+        "passed": true,
+        "details": "0 self-approval violation(s)"
+      },
+      {
+        "name": "approver_active_authorization",
+        "passed": true,
+        "details": "0 inactive approver violation(s)"
+      },
+      {
+        "name": "approval_lifecycle_transitions",
+        "passed": true,
+        "details": "2965 steps checked; 0 transition issue(s)"
+      },
+      {
+        "name": "parent_request_status_consistency",
+        "passed": true,
+        "details": "1720 routed requests checked; 0 status inconsistency(s)"
+      },
+      {
+        "name": "reimbursement_approved_claims_only",
+        "passed": true,
+        "details": "656 reimbursements checked; 0 unapproved claim(s)"
+      },
+      {
+        "name": "reimbursement_amount_exact_match",
+        "passed": true,
+        "details": "656 reimbursements checked; 0 mismatch(es)"
+      },
+      {
+        "name": "reimbursement_duplicate_prevention",
+        "passed": true,
+        "details": "656 reimbursements checked; 0 duplicate(s)"
+      },
+      {
+        "name": "reimbursement_payment_chronology",
+        "passed": true,
+        "details": "524 paid reimbursements; 0 chronology issue(s)"
+      },
+      {
+        "name": "cost_center_budget_reconciliation",
+        "passed": true,
+        "details": "20 cost centers checked; 0 arithmetic issue(s)"
+      },
+      {
+        "name": "cost_center_currency_consistency",
+        "passed": true,
+        "details": "1000 expense claims checked; 0 currency mismatch(es)"
+      }
+    ],
+    "errors": [],
+    "counts": {
+      "approval_steps_total": 2965,
+      "approval_steps_approved": 2353,
+      "approval_steps_rejected": 190,
+      "approval_steps_pending": 422,
+      "reimbursements_total": 656,
+      "reimbursements_paid": 524,
+      "reimbursements_pending": 132,
+      "workflow_events_total": 13647
+    }
+  },
+  "scope_limitation_note": "Metrics represent functional evaluation on a controlled ground-truth sample (18 records), verifying business rule coverage rather than broad stochastic performance."
+}

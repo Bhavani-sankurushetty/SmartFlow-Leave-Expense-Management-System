@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Policy Masters - SmartFlow Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('admin.portal') }}" class="btn btn-secondary btn-sm">&larr; Back to Admin Portal</a>
+        </div>
+        <h1 class="page-title">Statutory & Expense Policy Configuration</h1>
+        <p class="page-subtitle">Statutory leave entitlements and multi-country expense categories, thresholds and receipt requirements.</p>
+    </div>
+</div>
+
+<!-- Leave Policies (6 statutory policies) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="card-title">Leave Policies ({{ leave_policies|length }})</h2>
+        <span class="badge badge-info">Statutory Jurisdictions</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Policy ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Country</th>
+                    <th>Annual Entitlement</th>
+                    <th>Max Carryover</th>
+                    <th>Requires Approval</th>
+                    <th>Notice (Days)</th>
+                    <th>Paid</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lp in leave_policies %}
+                <tr>
+                    <td class="font-mono">{{ lp.leave_policy_id }}</td>
+                    <td><strong>{{ lp.name }}</strong></td>
+                    <td><span class="badge badge-secondary">{{ lp.category }}</span></td>
+                    <td><span class="badge badge-info">{{ lp.country }}</span></td>
+                    <td>{{ lp.annual_allowance }} days</td>
+                    <td>{{ lp.max_carryover_days }} days</td>
+                    <td>
+                        {% if lp.requires_approval %}
+                        <span class="badge badge-success">Yes</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Auto</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ lp.advance_notice_days }}</td>
+                    <td>
+                        {% if lp.is_paid %}
+                        <span class="badge badge-success">Paid</span>
+                        {% else %}
+                        <span class="badge badge-warning">Unpaid</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Expense Policies (35 policies) -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Expense Policies ({{ expense_policies|length }})</h2>
+        <span class="badge badge-primary">Country & Category Rules</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Policy ID</th>
+                    <th>Country</th>
+                    <th>Category</th>
+                    <th>Receipt Required Above</th>
+                    <th>Single Transaction Limit</th>
+                    <th>Daily Max</th>
+                    <th>Requires Approval</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ep in expense_policies %}
+                <tr>
+                    <td class="font-mono">{{ ep.expense_policy_id }}</td>
+                    <td><span class="badge badge-info">{{ ep.country }}</span></td>
+                    <td><strong>{{ ep.category }}</strong></td>
+                    <td>
+                        {% if ep.receipt_required_above > 0 %}
+                        ${{ ep.receipt_required_above }}
+                        {% else %}
+                        <span class="badge badge-warning">Always</span>
+                        {% endif %}
+                    </td>
+                    <td>${{ ep.max_single_transaction }}</td>
+                    <td>${{ ep.daily_limit or '—' }}</td>
+                    <td>
+                        {% if ep.requires_approval %}
+                        <span class="badge badge-success">Yes</span>
+                        {% else %}
+                        <span class="badge badge-secondary">No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
